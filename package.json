@@ -1,0 +1,19 @@
+{
+  "name": "monosatatl-gui",
+  "version": "0.0.1",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "bootstrap": "^4.2.1",
+    "d3": "^5.7.0",
+    "electron": "^4.0.1",
+    "font-awesome": "^4.7.0",
+    "jquery": "^3.4.1",
+    "lodash": "^4.17.11",
+    "popper.js": "^1.15.0",
+    "dotparser": "^1.0.0"
+  }
+}
