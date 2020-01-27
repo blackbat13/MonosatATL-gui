@@ -15,6 +15,9 @@
     <script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
     <script src="node_modules/d3/dist/d3.js"></script>
     <script src="node_modules/lodash/lodash.min.js"></script>
+    <script src="node_modules/graphlib-dot/dist/graphlib-dot.min.js"></script>
+    <script src="node_modules/dagre-d3/dist/dagre-d3.js"></script>
+<!--    <script src="https://dagrejs.github.io/project/dagre-d3/v0.5.0/dagre-d3.js"></script>-->
 </head>
 <body>
 <div class="container-fluid">
@@ -44,6 +47,7 @@
     <div class="row">
         <div id="div_graph" class="col-8">
             <svg id="graph" width="10000" height="10000">
+
             </svg>
         </div>
         <div class="col-4">
@@ -133,8 +137,51 @@
             })
         }
 
+        readOutput();
+
         function readOutput() {
             let fs = require('fs');
+            let parse = require('dotparser');
+            let data = fs.readFileSync('out.txt');
+            // console.log(data.toString().split('digraph'));
+            let digraphs = data.toString().split('digraph');
+            // for(let i = 1; i < digraphs.length; i++) {
+            //     let ast = parse('digraph' + digraphs[i]);
+            //     console.log(ast);
+            // }
+
+            let ast = parse('digraph' + digraphs[1]);
+            //console.log(ast[0].children);
+            // for(let i = 0; i < ast[0].children.length; i++) {
+            //     console.log(ast[0].children[i]);
+            // }
+
+            //createGraph(ast[0]);
+            loadDotGraph('digraph' + digraphs[1]);
+        }
+
+        function createGraph(dot) {
+            let nodes = [];
+            let links = [];
+            for(let i = 0; i < dot.children.length; i++) {
+                // console.log(dot.children[i]);
+                let child = dot.children[i];
+                console.log(child);
+                if(child.type === 'node_stmt') {
+                    nodes.push({'T': child.node_id.id, 'id': child.node_id.id});
+                } else if(child.type === 'edge_stmt') {
+                    let t = "";
+                    if(child.attr_list.length > 0) {
+                        t = child.attr_list[0].eq;
+                    }
+                    links.push({'id': i, 'source': child.edge_list[0].id, 'target':child.edge_list[1].id, "T": t});
+                }
+            }
+
+            console.log(nodes);
+            console.log(links);
+            let graph = {'nodes': nodes, 'links':links};
+            loadGraph(graph);
         }
 
         $generateButton.click(function(){
@@ -275,6 +322,13 @@
 
         function clearLinkColor() {
             $('.link').attr('stroke', '#CCC');
+        }
+
+        function loadDotGraph(digraph) {
+            var g = graphlibDot.read(digraph);
+            console.log(g);
+            var render = new dagreD3.render();
+            render(d3.select("svg"), g);
         }
 
         function loadGraph(graph) {
