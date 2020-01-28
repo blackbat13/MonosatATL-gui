@@ -8,6 +8,7 @@ form {
     height: 100%;
     padding: 10px;
     overflow-y: auto;
+    z-index: 20;
 }
 
 form input, form button, form select {
@@ -24,7 +25,7 @@ form select {
 
 .display_none {
     display: none !important;
-    color: red;
+    /*color: red;*/
 }
 
 .modal-body span {
@@ -105,19 +106,21 @@ path {
 div.tooltip {
     position: absolute;
     background-color: white;
-    max-width: 200px;
+    max-width: 400px;
+    white-space: nowrap;
     height: auto;
-    padding: 1px;
     border-style: solid;
     border-radius: 4px;
     border-width: 1px;
     box-shadow: 3px 3px 10px rgba(0, 0, 0, .5);
     pointer-events: none;
+    padding: 5px;
 }
 
-#div_graph {
+.graph {
     width: auto;
     height: auto;
+    z-index: 0;
 }
 
 #btn_lower_approx, #btn_upper_approx {
@@ -137,4 +140,5 @@ div.tooltip {
     top: 0;
     left: 0;
     width: 100%;
+    z-index: 10;
 }

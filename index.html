@@ -47,41 +47,9 @@
     </div>
     <div class="row">
         <div id="tabs">
-            <ul>
-                <li><a href="#tabs-1">Nunc tincidunt</a></li>
-                <li><a href="#tabs-2">Proin dolor</a></li>
-                <li><a href="#tabs-3">Aenean lacinia</a></li>
+            <ul id="tab-ul">
             </ul>
-            <div id="tabs-1">
-                <div id="div_graph" class="col-8">
-                    <svg id="graph" width="10000" height="10000">
 
-                    </svg>
-                </div>
-            </div>
-            <div id="tabs-2">
-                <p>Morbi tincidunt, dui sit amet facilisis feugiat, odio metus gravida ante, ut pharetra massa metus id
-                    nunc. Duis scelerisque molestie turpis. Sed fringilla, massa eget luctus malesuada, metus eros
-                    molestie lectus, ut tempus eros massa ut dolor. Aenean aliquet fringilla sem. Suspendisse sed ligula
-                    in ligula suscipit aliquam. Praesent in eros vestibulum mi adipiscing adipiscing. Morbi facilisis.
-                    Curabitur ornare consequat nunc. Aenean vel metus. Ut posuere viverra nulla. Aliquam erat volutpat.
-                    Pellentesque convallis. Maecenas feugiat, tellus pellentesque pretium posuere, felis lorem euismod
-                    felis, eu ornare leo nisi vel felis. Mauris consectetur tortor et purus.</p>
-            </div>
-            <div id="tabs-3">
-                <p>Mauris eleifend est et turpis. Duis id erat. Suspendisse potenti. Aliquam vulputate, pede vel
-                    vehicula accumsan, mi neque rutrum erat, eu congue orci lorem eget lorem. Vestibulum non ante. Class
-                    aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Fusce sodales.
-                    Quisque eu urna vel enim commodo pellentesque. Praesent eu risus hendrerit ligula tempus pretium.
-                    Curabitur lorem enim, pretium nec, feugiat nec, luctus a, lacus.</p>
-                <p>Duis cursus. Maecenas ligula eros, blandit nec, pharetra at, semper at, magna. Nullam ac lacus. Nulla
-                    facilisi. Praesent viverra justo vitae neque. Praesent blandit adipiscing velit. Suspendisse
-                    potenti. Donec mattis, pede vel pharetra blandit, magna ligula faucibus eros, id euismod lacus dolor
-                    eget odio. Nam scelerisque. Donec non libero sed nulla mattis commodo. Ut sagittis. Donec nisi
-                    lectus, feugiat porttitor, tempor ac, tempor vitae, pede. Aenean vehicula velit eu tellus interdum
-                    rutrum. Maecenas commodo. Pellentesque nec elit. Fusce in lacus. Vivamus a libero vitae lectus
-                    hendrerit hendrerit.</p>
-            </div>
         </div>
         <div class="col-4">
             <form>
@@ -102,6 +70,12 @@
 
                 </div>
                 <hr/>
+                <div class="form-group">
+                    <label id="atomicPropLabel" class="form-label" for="atomicProp">Number of Atomic
+                        Propositions:</label>
+                    <input class="form-control" type="number" min="1" id="atomicProp" value="1"
+                           step="1"/>
+                </div>
                 <div>
                     <label for="formula" id="formulaLabel">Formula to be verified:</label>
                     <input type="text" id="formula" value="<<0,1>> F 1"/>
@@ -144,26 +118,46 @@
             let $agentNo = $('#agentNo');
             let $modelOptions = $("#model_options");
             let $formula = $('#formula');
+            let $atomicProp = $("#atomicProp");
             let scale = 1;
+            let models;
 
-            $("#tabs").tabs();
+            for (let i = 0; i < 10; i++) {
+                $("#tab-ul").append("<li id='tab-" + i + "' class=\"tab-li\" tab_id='" + i + "'><a href=\"#tabs-" + (i + 1) + "\">" + "Label" + i + "</a></li>");
+                $("#tabs").append("<div id=\"tabs-" + (i + 1) + "\" class=\"tab-div\">\n" +
+                    "                <div class=\"col-8 graph\">\n" +
+                    "                    <svg id=\"graph-" + i + "\" width=\"10000\" height=\"10000\">\n" +
+                    "                    </svg>\n" +
+                    "                </div>\n" +
+                    "            </div>");
+            }
+            $(".tab-li").addClass("display_none");
+            $("#tabs").tabs({
+                active: 0
+            });
             addAgentDiv(0);
 
-            window.scrollTo(3800, 3800);
+            window.scrollTo(4500, 4500);
 
             function saveInput() {
                 let fs = require('fs');
                 let agentNo = $agentNo.val();
                 let input = "p cnf 1 1\n";
+                let atomicProp = $atomicProp.val();
                 input += "1 0\n\n";
 
                 for (let agentId = 0; agentId < agentNo; agentId++) {
                     let localStates = $('#agentLocalStates-' + agentId).val();
                     let observables = $('#agentObservables-' + agentId).val();
-                    input += 'kagent ' + agentId + ' ' + localStates + ' observables(' + observables + ")\n";
+                    if(observables.length > 0) {
+                        input += 'kagent ' + agentId + ' ' + localStates + ' observables(' + observables + ')\n';
+                    } else {
+                        input += 'kagent ' + agentId + ' ' + localStates + '\n';
+                    }
+
                 }
 
-                input += '\nkATL 3 1 1 ' + $formula.val() + '\n';
+                input += '\nkATL ' + atomicProp + ' 1 1 ' + $formula.val() + '\n';
 
                 fs.writeFile('input.txt', input, function (err) {
                     if (err) throw err;
@@ -181,38 +175,45 @@
                 let json = JSON.parse(data.toString());
 
                 let info = json['info'];
-                let models = json['models'];
+                models = json['models'];
 
                 console.log(info, models);
 
-                loadGraph(models[3]);
-            }
+                // $(".tab-li").remove();
+                // $(".tab-div").remove();
 
-            function modelToGraph(model) {
-                let nodes = [];
-                let links = [];
+                $(".tab-li").addClass("display_none");
 
-                for (let i = 0; i < model['links'].length; i++) {
-                    let link = model['links'][i];
-                    links.push({
-                        'id': link['id'],
-                        'source': link['source'],
-                        'target': link['target'],
-                        'T': link['label']
-                    });
+                for (let i = 0; i < models.length; i++) {
+                    $("#tab-" + i).removeClass("display_none");
+                    $("#tab-" + i + " a").text(models[i].label);
+                    // $("#tab-ul").append("<li class=\"tab-li\"><a href=\"#tabs-" + (i + 1) + "\">" + models[i].label + "</a></li>");
+                    // $("#tabs").append("<div id=\"tabs-" + (i + 1) + "\" class=\"tab-div\">\n" +
+                    //     "                <div class=\"col-8 graph\">\n" +
+                    //     "                    <svg id=\"graph-" + (i + 1) + "\" width=\"10000\" height=\"10000\">\n" +
+                    //     "                    </svg>\n" +
+                    //     "                </div>\n" +
+                    //     "            </div>");
+
+
                 }
 
-                for (let i = 0; i < model['nodes'].length; i++) {
-                    let node = model['nodes'][i];
-                    nodes.push({
-                        'id': node['id'],
-                        'T': node['label']
-                    });
-                }
+                // $("#tab-0").click();
 
-                console.log(nodes, links);
-                return {'nodes': nodes, 'links': links};
+                loadGraph(models[0], "graph-0");
+
+                // $("#tabs").tabs();
+
+                //loadGraph(models[3]);
             }
+
+            $(".tab-li").click(function () {
+                console.log($(this).attr("tab_id"));
+                $("svg").empty();
+                $(".tooltip").remove();
+                window.scrollTo(4500, 4500);
+                loadGraph(models[$(this).attr("tab_id")], "graph-" + $(this).attr("tab_id"));
+            });
 
             $generateButton.click(function () {
                 saveInput();
@@ -354,7 +355,7 @@
                 $('.link').attr('stroke', '#CCC');
             }
 
-            function loadGraph(graph) {
+            function loadGraph(graph, svgId) {
                 let tooltip = d3.select("body")
                     .append("div")
                     .attr("class", "tooltip")
@@ -363,11 +364,15 @@
                 let currNodes = graph.nodes;
                 let currLinks = graph.links;
 
-                const svg = d3.select('svg');
+                const svg = d3.select('#' + svgId);
                 const width = 10000;
                 const height = 10000;
 
-                svg.append('defs').append('marker')
+                svg.append('defs');
+
+                let defs = svg.select('defs');
+
+                defs.append('marker')
                     .attr("id", 'arrowhead')
                     .attr("viewBox", "0 -5 10 10")
                     .attr("refX", 19)
@@ -375,6 +380,20 @@
                     .attr("markerWidth", 6)
                     .attr("markerHeight", 6)
                     .attr("orient", "auto")
+                    .attr('xoverflow', 'visible')
+                    .append('svg:path')
+                    .attr('d', 'M 0,-5 L 10 ,0 L 0,5')
+                    .style('fill', '#999')
+                    .style('stroke', 'none');
+
+                defs.append('marker')
+                    .attr("id", 'looparrowhead')
+                    .attr("viewBox", "0 -5 10 10")
+                    .attr("refX", 20)
+                    .attr("refY", 1)
+                    .attr("markerWidth", 6)
+                    .attr("markerHeight", 6)
+                    .attr("orient", -170)
                     .attr('xoverflow', 'visible')
                     .append('svg:path')
                     .attr('d', 'M 0,-5 L 10 ,0 L 0,5')
@@ -397,7 +416,13 @@
                         .enter()
                         .append("path")
                         .attr("class", "link")
-                        .attr('marker-end', 'url(#arrowhead)');
+                        .attr('marker-end', function (d) {
+                            if (d.source === d.target) {
+                                return 'url(#looparrowhead)'
+                            } else {
+                                return 'url(#arrowhead)'
+                            }
+                        });
 
                     link.append("title")
                         .text(function (d) {
@@ -407,15 +432,16 @@
                     //Add mouseover events to links
                     link.attr('class', 'link')
                         .attr('id', function (d) {
-                            return 'link_' + d.id;
+                            return 'link_' + d.id + "-" + svgId;
                         })
                         .on('mouseover.fade', linkFade(0.1))
                         .on('mouseover.tooltip', function (d) {
                             tooltip.transition()
                                 .duration(300)
                                 .style("opacity", .8);
-                            tooltip.html("Source:" + d.source.id +
-                                "<p/>Target:" + d.target.id)
+                            tooltip.html("Source: " + d.source.id +
+                                "<br/>Target: " + d.target.id +
+                                "<br/>Label: " + d.label)
                                 .style("left", (d3.event.pageX) + "px")
                                 .style("top", (d3.event.pageY + 10) + "px");
                         })
@@ -446,7 +472,7 @@
                         .attr('fill-opacity', 1)
                         .attr('stroke-opacity', 1)
                         .attr('id', function (d, i) {
-                            return 'edgepath' + i
+                            return 'edgepath' + i + "-" + svgId
                         })
                         .style("pointer-events", "none");
 
@@ -463,7 +489,7 @@
                     node.append("circle")
                         .attr('class', 'node')
                         .attr('id', function (d) {
-                            return "node_" + d.id
+                            return "node_" + d.id + "-" + svgId
                         })
                         .attr('initial', function (d) {
                             return d.bgn === 1;
