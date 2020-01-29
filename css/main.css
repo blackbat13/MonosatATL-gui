@@ -81,6 +81,10 @@ form div {
     color: red;
 }
 
+.bold {
+    font-weight: bold;
+}
+
 
 /*.link {*/
 /*!*stroke: #c1c1c1;*!*/

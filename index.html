@@ -27,13 +27,20 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Verification finished</h5>
+                    <h5 class="modal-title">Results</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
-                    <p><span id="resultSpan"></span></p>
+                    <p>
+                        <span class="result-span display_none" id="SAT">
+                            The formula is <span class="bold">SATISFIABLE</span> under given constraints. A model has been found.
+                        </span>
+                        <span class="result-span display_none" id="UNSAT">
+                            The formula is <span class="bold">UNSATISFIABLE</span> under given constraints.
+                        </span>
+                    </p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-success" data-dismiss="modal">Close</button>
@@ -74,8 +81,12 @@
                     <textarea id="formula"><<0>> F 1</textarea>
                 </div>
                 <div class="form-check">
-                    <input id="pdf" type="checkbox" class="form-check-input" />
+                    <input id="pdf" type="checkbox" class="form-check-input"/>
                     <label id="pdfLabel" class="form-check-label" for="pdf">Generate PDF</label>
+                </div>
+                <div class="form-check">
+                    <input id="mcmasCheck" type="checkbox" class="form-check-input"/>
+                    <label id="mcmasCheckLabel" class="form-check-label" for="mcmasCheck">MCMAS-CHECK</label>
                 </div>
                 <div>
                     <button type="button" class="btn btn-lg btn-primary" id="btn_generate">Check</button>
@@ -113,6 +124,7 @@
             let $atomicProp = $("#atomicProp");
             let $verifier = $("#verifiers");
             let $pdf = $("#pdf");
+            let $mcmasCheck = $("#mcmasCheck");
             let scale = 1;
             let models;
 
@@ -143,7 +155,7 @@
                 for (let agentId = 0; agentId < agentNo; agentId++) {
                     let localStates = $('#agentLocalStates-' + agentId).val();
                     let observables = $('#agentObservables-' + agentId).val();
-                    if(observables.length > 0) {
+                    if (observables.length > 0) {
                         input += 'kagent ' + agentId + ' ' + localStates + ' observables(' + observables + ')\n';
                     } else {
                         input += 'kagent ' + agentId + ' ' + localStates + '\n';
@@ -163,30 +175,35 @@
             function run() {
                 let child = require('child_process').execFile;
                 let executablePath = "msatl/msatl";
-                let parameters = []; //$verifier.val(),
+                let parameters = [$verifier.val()]; //$verifier.val(),
 
-                if($pdf.prop('checked')) {
+                if ($pdf.prop('checked')) {
                     parameters.push("-pdf");
+                }
+
+                if($mcmasCheck.prop('checked')) {
+                    parameters.push('-mcmas-check');
                 }
 
                 parameters.push("input.txt");
 
-                child(executablePath, parameters, function(err, data) {
+                child(executablePath, parameters, function (err, data) {
                     // if(err){
                     //     console.error(err, data);
                     //     return;
                     // }
 
+                    console.log(err);
                     console.log(data.toString());
                     readOutput();
                 });
             }
 
             function openPdf() {
-                const { BrowserWindow } = require('electron').remote;
+                const {BrowserWindow} = require('electron').remote;
                 const PDFWindow = require('electron-pdf-window');
 
-                const win = new BrowserWindow({ width: 800, height: 600 });
+                const win = new BrowserWindow({width: 800, height: 600});
 
                 PDFWindow.addSupport(win);
 
@@ -200,8 +217,14 @@
                 let json = JSON.parse(data.toString());
 
                 let info = json['info'];
-                $("#resultSpan").text(info['Status']);
+
+                $(".result-span").addClass('display_none');
+
+                $("#" + info["Status"]).removeClass('display_none');
+
+                // $("#resultSpan").text(info['Status']);
                 models = json['models'];
+
 
                 $(".tab-li").addClass("display_none");
 
@@ -214,7 +237,7 @@
                 $("#resultModal").modal();
                 $("#tabs").tabs("option", "active", 0);
 
-                if($pdf.prop('checked')) {
+                if ($pdf.prop('checked')) {
                     openPdf();
                 }
             }
