@@ -18,12 +18,11 @@
     <script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
     <script src="node_modules/d3/dist/d3.js"></script>
     <script src="node_modules/lodash/lodash.min.js"></script>
-    <!--    <script src="https://dagrejs.github.io/project/dagre-d3/v0.5.0/dagre-d3.js"></script>-->
 </head>
 <body>
 <div class="container-fluid">
     <!-- Modal -->
-    <div class="modal fade" id="upperApproxModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+    <div class="modal fade" id="resultModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
          aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
@@ -34,10 +33,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <p>The formula: <span id="lowerApproxModalFormula"></span></p>
-                    <p>Verification result: the formula <span id="upperApproxTrue">might hold</span><span
-                            id="upperApproxFalse">does not hold</span> in the model</p>
-                    <p>Number of states where formula might hold: <span id="upperApproxNoStates"></span></p>
+                    <p><span id="resultSpan"></span></p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-success" data-dismiss="modal">Close</button>
@@ -49,13 +45,12 @@
         <div id="tabs">
             <ul id="tab-ul">
             </ul>
-
         </div>
         <div class="col-4">
             <form>
                 <div class="form-group">
                     <label id="verifierLabel" class="form-label" for="verifiers">Verifier:</label>
-                    <select name="verifier" id="verifiers">
+                    <select class="custom-select" name="verifier" id="verifiers">
                         <option value="-stv-engine">STV</option>
                         <option value="-mcmas-engine">MCMAS</option>
                     </select>
@@ -74,9 +69,13 @@
                     <input class="form-control" type="number" min="1" id="atomicProp" value="1"
                            step="1"/>
                 </div>
-                <div>
+                <div class="form-group">
                     <label for="formula" id="formulaLabel">Formula to be verified:</label>
-                    <input type="text" id="formula" value="<<0,1>> F 1"/>
+                    <textarea id="formula"><<0>> F 1</textarea>
+                </div>
+                <div class="form-check">
+                    <input id="pdf" type="checkbox" class="form-check-input" />
+                    <label id="pdfLabel" class="form-check-label" for="pdf">Generate PDF</label>
                 </div>
                 <div>
                     <button type="button" class="btn btn-lg btn-primary" id="btn_generate">Check</button>
@@ -113,6 +112,7 @@
             let $formula = $('#formula');
             let $atomicProp = $("#atomicProp");
             let $verifier = $("#verifiers");
+            let $pdf = $("#pdf");
             let scale = 1;
             let models;
 
@@ -162,31 +162,45 @@
 
             function run() {
                 let child = require('child_process').execFile;
-                let executablePath = "msatl/msatl.exe";
-                let parameters = [$verifier.val()];
+                let executablePath = "msatl/msatl";
+                let parameters = []; //$verifier.val(),
 
+                if($pdf.prop('checked')) {
+                    parameters.push("-pdf");
+                }
+
+                parameters.push("input.txt");
 
                 child(executablePath, parameters, function(err, data) {
-                    if(err){
-                        console.error(err);
-                        return;
-                    }
+                    // if(err){
+                    //     console.error(err, data);
+                    //     return;
+                    // }
 
                     console.log(data.toString());
                     readOutput();
                 });
             }
 
-            readOutput();
+            function openPdf() {
+                const { BrowserWindow } = require('electron').remote;
+                const PDFWindow = require('electron-pdf-window');
+
+                const win = new BrowserWindow({ width: 800, height: 600 });
+
+                PDFWindow.addSupport(win);
+
+                win.loadURL('file://' + __dirname + "/merged.pdf");
+            }
 
             function readOutput() {
                 let fs = require('fs');
-                let parse = require('dotparser');
-                let data = fs.readFileSync('msatl/resultFile.stv');
+                let data = fs.readFileSync('resultFile.stv');
 
                 let json = JSON.parse(data.toString());
 
                 let info = json['info'];
+                $("#resultSpan").text(info['Status']);
                 models = json['models'];
 
                 $(".tab-li").addClass("display_none");
@@ -197,6 +211,12 @@
                 }
 
                 loadGraph(models[0], "graph-0");
+                $("#resultModal").modal();
+                $("#tabs").tabs("option", "active", 0);
+
+                if($pdf.prop('checked')) {
+                    openPdf();
+                }
             }
 
             $(".tab-li").click(function () {

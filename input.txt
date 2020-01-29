@@ -1,6 +1,0 @@
-p cnf 1 1
-1 0
-
-kagent 0 1 observables(1, 2)
-
-kATL 1 1 1 <<0,1>> F 1

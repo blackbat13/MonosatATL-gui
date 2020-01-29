@@ -5,7 +5,9 @@ let win;
 
 function createWindow() {
     // Stwórz okno przeglądarki.
-    win = new BrowserWindow({width: 800, height: 600});
+    win = new BrowserWindow({width: 800, height: 600, webPreferences: {
+            nodeIntegration: true
+        }});
 
     // i ładowanie index.html aplikacji.
     win.loadFile('index.html');
