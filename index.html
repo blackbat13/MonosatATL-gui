@@ -135,6 +135,10 @@
                     <button type="button" class="btn btn-lg btn-primary" id="btn_generate">Check</button>
                 </div>
                 <hr/>
+                <div class="form-check">
+                    <input id="showLabels" type="checkbox" class="form-check-input"/>
+                    <label id="showLabelsLabel" class="form-check-label" for="showLabels">Show Actions</label>
+                </div>
                 <div class="row">
                     <div class="col-6">
                         <button type="button" class="btn btn-lg btn-primary" id="btn_zoom_out"><i
@@ -190,6 +194,14 @@
 
             window.scrollTo(4500, 4500);
 
+            $("#showLabels").change(function() {
+                if(this.checked) {
+                    $(".edgeLabel").removeClass('display_none');
+                } else {
+                    $(".edgeLabel").addClass('display_none');
+                }
+            });
+
             function saveInput() {
                 let fs = require('fs');
                 let agentNo = $agentNo.val();
@@ -241,7 +253,7 @@
                     //     console.error(err, data);
                     //     return;
                     // }
-                    if (err.code !== 20) {
+                    if (err.code !== 20 && err.code !== 10) {
                         console.log(err.code);
                         console.log(err);
                         console.log(data.toString());
@@ -586,12 +598,35 @@
                         .enter()
                         .append('path')
                         .attr('class', 'edgepath')
-                        .attr('fill-opacity', 1)
-                        .attr('stroke-opacity', 1)
+                        .attr('fill-opacity', 0)
+                        .attr('stroke-opacity', 0)
                         .attr('id', function (d, i) {
                             return 'edgepath' + i + "-" + svgId
                         })
                         .style("pointer-events", "none");
+
+                    edgelabels = svg.selectAll(".edgelabel")
+                        .data(links)
+                        .enter()
+                        .append('text')
+                        .style("pointer-events", "none")
+                        .attr('class', function() {
+                            if($("#showLabels").prop('checked')) {
+                                return "edgeLabel";
+                            } else {
+                                return "edgeLabel display_none";
+                            }
+                        })
+                        .attr('id', function (d, i) {return 'edgelabel' + i + "-" + svgId})
+                        .attr('font-size', 20)
+                        .attr('fill', '#666');
+
+                    edgelabels.append('textPath')
+                        .attr('xlink:href', function (d, i) {return '#link_' + d.id + "-" + svgId})
+                        .style("text-anchor", "middle")
+                        .style("pointer-events", "none")
+                        .attr("startOffset", "50%")
+                        .text(function (d) {return d.label});
 
                     node = svg.selectAll(".node")
                         .data(nodes)
@@ -634,7 +669,13 @@
                             tooltip.transition()
                                 .duration(300)
                                 .style("opacity", .8);
-                            tooltip.html("Node:" + d.id)
+                            tooltip.html(function() {
+                                if(d.props !== undefined) {
+                                    return "Node:" + d.id + "<br/>Label:" + d.label + "<br/>Props:[" + d.props + "]";
+                                } else {
+                                    return "Node:" + d.id + "<br/>Label:" + d.label;
+                                }
+                            })
                                 .style("left", (d3.event.pageX) + "px")
                                 .style("top", (d3.event.pageY + 10) + "px");
                         })
@@ -652,8 +693,13 @@
 
                     node.append("text")
                         .attr("text-anchor", "middle")
-                        .attr("dy", ".3em").text(function (d) {
-                        return d.id
+                        .attr("dy", ".3em").html(function (d) {
+                            return d.id;
+                            // if(d.props !== undefined){
+                            //     return d.id + "<span class='node_text'><br/>Label:" + d.label + "<br/>Props:[" + d.props + "]</span>";
+                            // } else {
+                            //     return d.id + "<span class='node_text'><br/>Label:" + d.label + "</span>";
+                            // }
                     });
 
                     _.each(links, function (link) {
@@ -722,6 +768,19 @@
 
                     edgepaths.attr('d', function (d) {
                         return 'M ' + d.source.x + ' ' + d.source.y + ' L ' + d.target.x + ' ' + d.target.y;
+                    });
+
+                    edgelabels.attr('transform', function (d) {
+                        if (d.target.x < d.source.x) {
+                            var bbox = this.getBBox();
+
+                            rx = bbox.x + bbox.width / 2;
+                            ry = bbox.y + bbox.height / 2;
+                            return 'rotate(180 ' + rx + ' ' + ry + ')';
+                        }
+                        else {
+                            return 'rotate(0)';
+                        }
                     });
                 }
 
@@ -818,7 +877,11 @@
                     });
                 });
             }
+
+
+        // readOutput(false);
         }
+
     );
 
 
