@@ -136,6 +136,10 @@
                 </div>
                 <hr/>
                 <div class="form-check">
+                    <input id="showNodeLabels" type="checkbox" class="form-check-input"/>
+                    <label id="showNodeLabelsLabel" class="form-check-label" for="showNodeLabels">Show State Labels</label>
+                </div>
+                <div class="form-check">
                     <input id="showLabels" type="checkbox" class="form-check-input"/>
                     <label id="showLabelsLabel" class="form-check-label" for="showLabels">Show Actions</label>
                 </div>
@@ -194,13 +198,23 @@
 
             window.scrollTo(4500, 4500);
 
-            $("#showLabels").change(function() {
-                if(this.checked) {
+            $("#showLabels").change(function () {
+                if (this.checked) {
                     $(".edgeLabel").removeClass('display_none');
                 } else {
                     $(".edgeLabel").addClass('display_none');
                 }
             });
+
+        $("#showNodeLabels").change(function () {
+            if (this.checked) {
+                $(".node_label").removeClass('display_none');
+                $(".node_props").removeClass('display_none');
+            } else {
+                $(".node_label").addClass('display_none');
+                $(".node_props").addClass('display_none');
+            }
+        });
 
             function saveInput() {
                 let fs = require('fs');
@@ -610,23 +624,29 @@
                         .enter()
                         .append('text')
                         .style("pointer-events", "none")
-                        .attr('class', function() {
-                            if($("#showLabels").prop('checked')) {
+                        .attr('class', function () {
+                            if ($("#showLabels").prop('checked')) {
                                 return "edgeLabel";
                             } else {
                                 return "edgeLabel display_none";
                             }
                         })
-                        .attr('id', function (d, i) {return 'edgelabel' + i + "-" + svgId})
+                        .attr('id', function (d, i) {
+                            return 'edgelabel' + i + "-" + svgId
+                        })
                         .attr('font-size', 20)
                         .attr('fill', '#666');
 
                     edgelabels.append('textPath')
-                        .attr('xlink:href', function (d, i) {return '#link_' + d.id + "-" + svgId})
+                        .attr('xlink:href', function (d, i) {
+                            return '#link_' + d.id + "-" + svgId
+                        })
                         .style("text-anchor", "middle")
                         .style("pointer-events", "none")
                         .attr("startOffset", "50%")
-                        .text(function (d) {return d.label});
+                        .text(function (d) {
+                            return d.label
+                        });
 
                     node = svg.selectAll(".node")
                         .data(nodes)
@@ -669,8 +689,8 @@
                             tooltip.transition()
                                 .duration(300)
                                 .style("opacity", .8);
-                            tooltip.html(function() {
-                                if(d.props !== undefined) {
+                            tooltip.html(function () {
+                                if (d.props !== undefined) {
                                     return "Node:" + d.id + "<br/>Label:" + d.label + "<br/>Props:[" + d.props + "]";
                                 } else {
                                     return "Node:" + d.id + "<br/>Label:" + d.label;
@@ -691,16 +711,55 @@
                                 .style("top", (d3.event.pageY + 10) + "px");
                         });
 
+                    // node.append("title")
+                    //     .text(function (d) {return d.id;});
+
+                    // node.append("text")
+                    //     .attr("dy", -3)
+                    //     .text(function (d) {return d.id;});
+
                     node.append("text")
                         .attr("text-anchor", "middle")
                         .attr("dy", ".3em").html(function (d) {
-                            return d.id;
-                            // if(d.props !== undefined){
-                            //     return d.id + "<span class='node_text'><br/>Label:" + d.label + "<br/>Props:[" + d.props + "]</span>";
-                            // } else {
-                            //     return d.id + "<span class='node_text'><br/>Label:" + d.label + "</span>";
-                            // }
+                        return d.id;
+                        // if(d.props !== undefined){
+                        //     return d.id + "<span class='node_text'><br/>Label:" + d.label + "<br/>Props:[" + d.props + "]</span>";
+                        // } else {
+                        //     return d.id + "<span class='node_text'><br/>Label:" + d.label + "</span>";
+                        // }
                     });
+
+                    node.append("text")
+                        .attr("dy", 35)
+                        .attr('dx', -20)
+                        .attr('class', function() {
+                            if ($("#showNodeLabels").prop('checked')) {
+                                return "node_label";
+                            } else {
+                                return "node_label display_none";
+                            }
+                        })
+                        .html(function (d) {
+                            return "Label: " + d.label;
+                        });
+
+                    node.append("text")
+                        .attr("dy", 55)
+                        .attr('dx', -20)
+                        .attr('class', function() {
+                            if ($("#showNodeLabels").prop('checked')) {
+                                return "node_props";
+                            } else {
+                                return "node_props display_none";
+                            }
+                        })
+                        .html(function (d) {
+                            if(d.props === undefined) {
+                                return "";
+                            }
+
+                            return "Props: [" + d.props + "]";
+                        });
 
                     _.each(links, function (link) {
 
@@ -777,8 +836,7 @@
                             rx = bbox.x + bbox.width / 2;
                             ry = bbox.y + bbox.height / 2;
                             return 'rotate(180 ' + rx + ' ' + ry + ')';
-                        }
-                        else {
+                        } else {
                             return 'rotate(0)';
                         }
                     });
@@ -879,9 +937,8 @@
             }
 
 
-        // readOutput(false);
+            // readOutput(false);
         }
-
     );
 
 
