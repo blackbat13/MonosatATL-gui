@@ -15,6 +15,7 @@
     <link href="node_modules/font-awesome/css/font-awesome.min.css" type="text/css" rel="stylesheet">
     <link href="node_modules/jquery-ui-dist/jquery-ui.min.css" type="text/css" rel="stylesheet">
     <link href="node_modules/jquery-ui-dist/jquery-ui.theme.min.css" type="text/css" rel="stylesheet">
+    <link href="node_modules/material-icons/iconfont/material-icons.css" type="text/css" rel="stylesheet">
     <script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
     <script src="node_modules/d3/dist/d3.js"></script>
     <script src="node_modules/lodash/lodash.min.js"></script>
@@ -22,28 +23,69 @@
 <body>
 <div class="container-fluid">
     <!-- Modal -->
-    <div class="modal fade" id="resultModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
-         aria-hidden="true">
-        <div class="modal-dialog" role="document">
+    <div id="resultModal" class="modal fade">
+        <div class="modal-dialog modal-confirm">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Results</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+                <div class="modal-header-success">
+                    <div class="icon-box">
+                        <i class="material-icons">&#xE876;</i>
+                    </div>
+                    <!--                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>-->
                 </div>
-                <div class="modal-body">
+                <div class="modal-body text-center">
+                    <h4>Results</h4>
                     <p>
-                        <span class="result-span display_none" id="SAT">
-                            The formula is <span class="bold">SATISFIABLE</span> under given constraints. A model has been found.
-                        </span>
+                                                <span class="result-span display_none" id="SAT">
+                                                    The formula is <span class="bold">SATISFIABLE</span> under given constraints. <br/>A model has been found.
+                                                </span>
                         <span class="result-span display_none" id="UNSAT">
-                            The formula is <span class="bold">UNSATISFIABLE</span> under given constraints.
-                        </span>
+                                                    The formula is <span class="bold">UNSATISFIABLE</span> under given constraints.
+                                                </span>
                     </p>
+                    <button class="btn btn-success" data-dismiss="modal"><span>Close</span></button>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-success" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+    <!--    <div class="modal fade" id="resultModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"-->
+    <!--         aria-hidden="true">-->
+    <!--        <div class="modal-dialog" role="document">-->
+    <!--            <div class="modal-content">-->
+    <!--                <div class="modal-header">-->
+    <!--                    <h5 class="modal-title">Results</h5>-->
+    <!--                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">-->
+    <!--                        <span aria-hidden="true">&times;</span>-->
+    <!--                    </button>-->
+    <!--                </div>-->
+    <!--                <div class="modal-body">-->
+    <!--                    <p>-->
+    <!--                        <span class="result-span display_none" id="SAT">-->
+    <!--                            The formula is <span class="bold">SATISFIABLE</span> under given constraints. A model has been found.-->
+    <!--                        </span>-->
+    <!--                        <span class="result-span display_none" id="UNSAT">-->
+    <!--                            The formula is <span class="bold">UNSATISFIABLE</span> under given constraints.-->
+    <!--                        </span>-->
+    <!--                    </p>-->
+    <!--                </div>-->
+    <!--                <div class="modal-footer">-->
+    <!--                    <button type="button" class="btn btn-success" data-dismiss="modal">Close</button>-->
+    <!--                </div>-->
+    <!--            </div>-->
+    <!--        </div>-->
+    <!--    </div>-->
+    <div id="errorModal" class="modal fade">
+        <div class="modal-dialog modal-confirm">
+            <div class="modal-content">
+                <div class="modal-header-error">
+                    <div class="icon-box">
+                        <i class="material-icons">&#xE5CD;</i>
+                    </div>
+                    <!--                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>-->
+                </div>
+                <div class="modal-body text-center">
+                    <h4>Error!</h4>
+                    <p id="errorModalMessage"></p>
+                    <button class="btn btn-success" data-dismiss="modal">OK</button>
                 </div>
             </div>
         </div>
@@ -56,10 +98,11 @@
         <div class="col-4">
             <form>
                 <div class="form-group">
-                    <label id="verifierLabel" class="form-label" for="verifiers">Verifier:</label>
+                    <label id="verifierLabel" class="form-label" for="verifiers">Model-checking engine:</label>
                     <select class="custom-select" name="verifier" id="verifiers">
-                        <option value="-stv-engine">STV</option>
+                        <option value="">Embedded</option>
                         <option value="-mcmas-engine">MCMAS</option>
+                        <option value="-stv-engine">STV</option>
                     </select>
                 </div>
                 <div id="model_options">
@@ -77,7 +120,7 @@
                            step="1"/>
                 </div>
                 <div class="form-group">
-                    <label for="formula" id="formulaLabel">Formula to be verified:</label>
+                    <label for="formula" id="formulaLabel">ATL formula to be checked for satisfiability:</label>
                     <textarea id="formula"><<0>> F 1</textarea>
                 </div>
                 <div class="form-check">
@@ -127,6 +170,8 @@
             let $mcmasCheck = $("#mcmasCheck");
             let scale = 1;
             let models;
+            let $errorModal = $("#errorModal");
+            let $errorModalMessage = $("#errorModalMessage");
 
             for (let i = 0; i < 10; i++) {
                 $("#tab-ul").append("<li id='tab-" + i + "' class=\"tab-li\" tab_id='" + i + "'><a href=\"#tabs-" + (i + 1) + "\">" + "Label" + i + "</a></li>");
@@ -175,13 +220,17 @@
             function run() {
                 let child = require('child_process').execFile;
                 let executablePath = "msatl/msatl";
-                let parameters = [$verifier.val()]; //$verifier.val(),
+                let parameters = []; //$verifier.val(),
+
+                if ($verifier.val() !== "") {
+                    parameters.push($verifier.val());
+                }
 
                 if ($pdf.prop('checked')) {
                     parameters.push("-pdf");
                 }
 
-                if($mcmasCheck.prop('checked')) {
+                if ($mcmasCheck.prop('checked')) {
                     parameters.push('-mcmas-check');
                 }
 
@@ -192,10 +241,18 @@
                     //     console.error(err, data);
                     //     return;
                     // }
-
-                    console.log(err);
-                    console.log(data.toString());
-                    readOutput();
+                    if (err.code !== 20) {
+                        console.log(err.code);
+                        console.log(err);
+                        console.log(data.toString());
+                        if (err.code === 1) {
+                            readOutput(false);
+                            return;
+                        }
+                        readOutput(true);
+                        return;
+                    }
+                    readOutput(false);
                 });
             }
 
@@ -210,17 +267,41 @@
                 win.loadURL('file://' + __dirname + "/merged.pdf");
             }
 
-            function readOutput() {
+            function readOutput(errorOccurred) {
                 let fs = require('fs');
                 let data = fs.readFileSync('resultFile.stv');
 
                 let json = JSON.parse(data.toString());
 
+                let error = json['error'];
+
+                if (errorOccurred) {
+                    resetGraph();
+                    let message = "An error has occurred.";
+                    $errorModalMessage.text(message);
+                    $errorModal.modal();
+                    return;
+                }
+
+                if (error === true) {
+                    resetGraph();
+                    let message = json['message'];
+                    $errorModalMessage.text(message);
+                    $errorModal.modal();
+                    return;
+                }
+
                 let info = json['info'];
 
                 $(".result-span").addClass('display_none');
 
-                $("#" + info["Status"]).removeClass('display_none');
+                $("#" + info["status"]).removeClass('display_none');
+
+                if (info['status'] === "UNSAT") {
+                    resetGraph();
+                    $("#resultModal").modal();
+                    return;
+                }
 
                 // $("#resultSpan").text(info['Status']);
                 models = json['models'];
@@ -233,6 +314,7 @@
                     $("#tab-" + i + " a").text(models[i].label);
                 }
 
+                resetGraph();
                 loadGraph(models[0], "graph-0");
                 $("#resultModal").modal();
                 $("#tabs").tabs("option", "active", 0);
@@ -343,7 +425,7 @@
             });
 
             function resetGraph() {
-                $svgGraph.empty();
+                $("svg").empty();
                 window.scrollTo(4500, 4500);
             }
 

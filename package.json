@@ -15,6 +15,7 @@
     "lodash": "^4.17.11",
     "popper.js": "^1.15.0",
     "jquery-ui-dist": "^1.12.1",
-    "electron-pdf-window": "^1.0.12"
+    "electron-pdf-window": "^1.0.12",
+    "material-icons": "^0.3.1"
   }
 }
